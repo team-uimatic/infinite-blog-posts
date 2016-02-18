@@ -2,7 +2,7 @@
 
 //load defaults for first time on page load
 function load_inf_bg() {
-    
+
     //should not run unless post
     if (!is_single())
         return;
@@ -11,15 +11,17 @@ function load_inf_bg() {
     $inf_post_id = get_the_ID();
     $inf_post_url = get_permalink($inf_post_id);
 
-    $tmp =  "<script>";
-    $tmp .=  "inf_settings = {"
+    //scrollMargin determines how much difference should be covered by scroll before updating the URL
+
+    $tmp = "<script>";
+    $tmp .= "inf_settings = {"
 //    . "'container':'#single-post',"
-//    . "'scrollSensitivity':50,"    
-    . "'parent_ID':'$inf_post_id',"
-    . "'parent_URL':'$inf_post_url'"
-    . "};";
+//    . "'scrollMargin':50,"    
+            . "'parent_ID':'$inf_post_id',"
+            . "'parent_URL':'$inf_post_url'"
+            . "};";
     $tmp .= "</script>";
-    echo  $tmp;
+    echo $tmp;
 }
 
 add_action('wp_head', 'load_inf_bg');
@@ -43,4 +45,5 @@ function inf_next_post($content) {
 
     return $inf_content;
 }
+
 ?>

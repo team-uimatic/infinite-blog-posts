@@ -1,8 +1,8 @@
 (function ($, window, document, undefined) {
 
     __log = function () {
-        //modify logger
-        //in progress
+//        modify logger
+//        in progress
 //        console;
     }
 
@@ -18,22 +18,34 @@
             console.warn('Could not load Infinite posts');
         }
         else {
-            inf_defaults = $.extend(true, {'scrollSensitivity': 50}, inf_settings);
+            inf_defaults = $.extend(true, {
+                'scrollMargin': 50
+            }, inf_settings);
 
-            // if no container has been assigned, specify own container just inside body and put all content inside of it
-            if (typeof (inf_defaults.container) == 'undefined') {
-                console.warn("Default container for infinite posts is not defined");
-                inf_defaults.container = '.' + $infDefaultCont;
-                $('body').wrapInner('<div class="' + $infDefaultCont + '" />');
-            }
+            //start monitoring scroll for url change
+            monitorScroll();
 
-            // add default classes and href to FIRST div as it will not have these values
-            $(inf_defaults.container).addClass($infCommonClass + " " + $infUniqClass + inf_defaults.parent_ID + " " + $infCommonCont);
-            $(inf_defaults.container).attr('data-href', inf_defaults.parent_URL);
+            //load structure by adding classes and id to manage the plugin on the page
+            loadStructure();
 
             // immediately check and load next div to give smooth scroll into the next post
+            //on first instance next page is loaded instantly for other pages it is determined on scroll
             loadNext();
         }
+    }
+
+    loadStructure = function () {
+        // if no container has been assigned, specify own container just inside body and put all content inside of it
+        if (typeof (inf_defaults.container) == 'undefined') {
+            console.warn("Default container for infinite posts is not defined");
+            inf_defaults.container = '.' + $infDefaultCont;
+            $('body').wrapInner('<div class="' + $infDefaultCont + '" />');
+        }
+
+        // add default classes and href to FIRST div as it will not have these values
+        $(inf_defaults.container).addClass($infCommonClass + " " + $infUniqClass + inf_defaults.parent_ID + " " + $infCommonCont);
+        $(inf_defaults.container).attr('data-href', inf_defaults.parent_URL);
+
     }
 
     // load subsequent divs
@@ -48,10 +60,10 @@
             return;
 
         // if all looks good then fetch the content and append
-        fetchAppend();
+        fetchAndAppend();
     }
 
-    fetchAppend = function () {
+    fetchAndAppend = function () {
 
         //place target div first and then insert data at the end of LAST repeating div
         var $tmp = $('<div/>', {id: $infUniqClass + __uiNxtPst_ID});  // id  =  unique-class-90
@@ -67,53 +79,75 @@
 
         var $tmpVarURL = __uiNxtPst_URL;
         console.log(inf_defaults)
+
         console.info("Loading " + $loadAddress + "  " + "." + $infDefaultCont + "-- " + inf_defaults.container);
         $("#" + $infUniqClass + __uiNxtPst_ID).load($loadAddress, function () {
             //now the data has been loaded, we add our classes and additonal data to the elements
             $(this).children("div:first").attr('data-href', $tmpVarURL).addClass($infCommonClass + " " + $infUniqClass + __uiNxtPst_ID);
         });
     }
+
     switchURL = function (URL) {
         window.history.pushState("", "", URL);
     }
 
-    var lastScrollTop = 0;
-    $window.scroll(function (event) {
+    monitorScroll = function () {
 
-        var dir, screenTop = $(this).scrollTop();
-        if (screenTop > lastScrollTop)
-            dir = "down";
-        else
-            dir = "up";
-        lastScrollTop = screenTop;
+        var lastScrollTop = 0;//default scroll from top
 
-        // handle url change on scroll 
-        var $infPages = $('.' + $infCommonClass);
-        $infPages.each(function (index, value) {
-            var itemOffsetTop = Math.abs($(this).offset().top);
-            var height = $(this).height();
-            var $currURL = $(this).attr('data-href');
-//            console.log(screenTop + " " + itemOffsetTop + " " + $currURL)
-            // change url to next post when going down
+        $window.scroll(function (event) {
 
-            if (dir == "down" &&
-                    (screenTop - itemOffsetTop < inf_defaults.scrollSensitivity && screenTop - itemOffsetTop > (-inf_defaults.scrollSensitivity))) {
-                var URLBefore = window.location.href;
-                switchURL($currURL);
-                var URLAfter = window.location.href;
+            //scrollMargin determines how much difference should be covered by scroll before updating the URL
+            var scrollMargin = inf_defaults.scrollMargin;
 
-                console.info("At this time we are advancing to the next post so let's load the next post");
-                if (URLBefore != URLAfter)
-                    loadNext();
-            }
+            var dir, screenTop = $(this).scrollTop();
+            if (screenTop > lastScrollTop)
+                dir = "down";
+            else
+                dir = "up";
 
-            // change url to previous post when going up
-            if ((dir == "up") &&
-                    ((screenTop - itemOffsetTop - height) < inf_defaults.scrollSensitivity && (screenTop - itemOffsetTop - height) > 0)) {
-                switchURL($currURL);
-            }
+            var currentScrollJump = Math.abs(screenTop - lastScrollTop);
+            // check if scoll has jumped as in the case of spacebar/pageUp/pageDown
+
+            // handle url change on scroll 
+            var $infPages = $('.' + $infCommonClass);
+            $infPages.each(function (index, value) {
+                var itemOffsetTop = Math.abs($(this).offset().top);
+                var height = $(this).height();
+                var $currURL = $(this).attr('data-href');
+                console.log(screenTop - itemOffsetTop + " " + scrollMargin + " " + currentScrollJump + " " + $currURL);
+                // change url to next post when going down
+
+                // direction should be downwards
+                // screentop - offset of current div should be > min scroll margin
+                // specila case where scroll jumps (pageup/scroll)
+                if (dir == "down" &&
+                        screenTop - itemOffsetTop > 0 &&
+                        (screenTop - itemOffsetTop < (scrollMargin) || screenTop - itemOffsetTop < currentScrollJump )
+                        ) {
+
+                    var URLBefore = window.location.href;
+                    switchURL($currURL);
+                    var URLAfter = window.location.href;
+
+                    console.info("At this time we are advancing to the next post so let's load the next post");
+                    if (URLBefore != URLAfter)
+                        loadNext();
+                }
+
+//                console.log(screenTop - itemOffsetTop - height + " " + scrollMargin + " " + currentScrollJump + " " + $currURL);
+                // change url to previous post when going up
+                if ( dir == "up" &&
+                        (screenTop - itemOffsetTop - height) < 0 &&
+                        ((screenTop - itemOffsetTop - height) > -scrollMargin || (screenTop - itemOffsetTop - height) > -currentScrollJump)
+                        ) {
+                    switchURL($currURL);
+                }
+            });
+            lastScrollTop = screenTop;
         });
-    });
+    }
+
     // wait till window load to for settings to take affect
     $(window).load(init);
 })(jQuery, window, document);
