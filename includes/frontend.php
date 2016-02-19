@@ -10,13 +10,14 @@ function load_inf_bg() {
     // load information of current post
     $inf_post_id = get_the_ID();
     $inf_post_url = get_permalink($inf_post_id);
-
+    global $inf_data;
+    $loadingIcon = $inf_data['inf_url'] . 'images/loading_blue.gif';
     //scrollMargin determines how much difference should be covered by scroll before updating the URL
 
     $tmp = "<script>";
     $tmp .= "inf_settings = {"
 //    . "'container':'#single-post',"
-//    . "'scrollMargin':50,"    
+            . "'loadingIcon':'$loadingIcon',"
             . "'parent_ID':'$inf_post_id',"
             . "'parent_URL':'$inf_post_url'"
             . "};";

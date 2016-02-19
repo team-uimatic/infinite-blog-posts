@@ -1,4 +1,5 @@
 <?php
+
 /*
   Plugin Name: Infinite Blog Posts
   Plugin URI: https://github.com/raj-uimatic/
@@ -8,11 +9,15 @@
   Author URI: http://uimatic.com
  */
 
+global $inf_data;
+$inf_data = array();
+
 register_activation_hook(__FILE__, 'install_wp_inf_data');
+
 // activation hook
 function install_wp_inf_data() {
     // no data processing required on registration at this time
-    global $wpdb;
+//    global $wpdb;
 }
 
 add_action('admin_menu', 'wp_inf_main_menu');
@@ -35,6 +40,8 @@ function inf_posts_resources() {
 }
 
 add_action('wp_enqueue_scripts', 'inf_posts_resources');
-$inf_dir = plugin_dir_path( __FILE__ );
+
+$inf_data['inf_dir'] = plugin_dir_path(__FILE__);
+$inf_data['inf_url'] = plugin_dir_url(__FILE__);
 // include functions for frontend
-require_once("$inf_dir/includes/frontend.php");
+require_once($inf_data['inf_dir'] . "/includes/frontend.php");
